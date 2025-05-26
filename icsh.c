@@ -28,16 +28,34 @@ int parse_exit_code(char *arg) {
     return code & 0xFF;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     char buffer[MAX_CMD_BUFFER];
     char last_cmd[MAX_CMD_BUFFER] = "";
-    printf("Starting IC shell\n");
+    FILE *input = stdin;
+
+    // open file for reading
+    if (argc == 2) {
+        input = fopen(argv[1], "r");
+        if (!input) {
+            fprintf(stderr, "icsh: cannot open file %s\n", argv[1]);
+            return 1;
+        }
+    }
+
+    if (input == stdin)
+        printf("Starting IC shell\n");
+
     while (1) {
-        printf("icsh $ ");
-        if (!fgets(buffer, MAX_CMD_BUFFER, stdin)) {
-            printf("\n");
+        if (input == stdin)
+            printf("icsh $ ");
+
+        // read command from file
+        if (!fgets(buffer, MAX_CMD_BUFFER, input)) {
+            if (input != stdin) fclose(input);
+            if (input == stdin) printf("\n");
             break;
         }
+
         // rm trailing newline
         buffer[strcspn(buffer, "\n")] = 0;
         trim(buffer);
