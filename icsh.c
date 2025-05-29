@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/wait.h> 
+#include <unistd.h> 
 
 #define MAX_CMD_BUFFER 255
 
@@ -86,7 +89,28 @@ int main(int argc, char *argv[]) {
             printf("bye\n");
             exit(code);
         } else {
-            printf("bad command\n");
+            // try to run as external command
+            char *argv_exec[MAX_CMD_BUFFER/2 + 2];
+            int i = 0;
+            argv_exec[i++] = cmd;
+            char *arg = NULL;
+            while ((arg = strtok(NULL, " ")) != NULL) {
+                argv_exec[i++] = arg;
+            }
+            argv_exec[i] = NULL;
+
+            pid_t pid = fork();
+            if (pid < 0) {
+                perror("fork");
+            } else if (pid == 0) {
+                // error handling
+                execvp(cmd, argv_exec);
+                fprintf(stderr, "icsh: command not found: %s\n", cmd);
+                exit(127);
+            } else {
+                int status;
+                waitpid(pid, &status, 0);
+            }
         }
     }
     return 0;
