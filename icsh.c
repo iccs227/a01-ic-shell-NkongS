@@ -1,42 +1,17 @@
-/* ICCS227: Project 1: icsh
- * Name: Naruebet Songsri
- * StudentID: 6580006
- */
-
-#include "stdio.h"
+#include "icsh.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <unistd.h>
 #include <sys/types.h>
-#include <sys/wait.h> 
-#include <unistd.h> 
-
-#define MAX_CMD_BUFFER 255
-
-// trim whitespace
-void trim(char *str) {
-    char *end;
-    // leading
-    while(isspace((unsigned char)*str)) str++;
-    if(*str == 0) return;
-    // trailing
-    end = str + strlen(str) - 1;
-    while(end > str && isspace((unsigned char)*end)) end--;
-    *(end+1) = 0;
-}
-
-// parse exit code helper
-int parse_exit_code(char *arg) {
-    int code = atoi(arg);
-    return code & 0xFF;
-}
 
 int main(int argc, char *argv[]) {
     char buffer[MAX_CMD_BUFFER];
     char last_cmd[MAX_CMD_BUFFER] = "";
+    int last_status = 0;
     FILE *input = stdin;
+    pid_t child_pid = 0;
 
-    // open file for reading
     if (argc == 2) {
         input = fopen(argv[1], "r");
         if (!input) {
@@ -45,6 +20,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    setup_signal_handlers();
+
     if (input == stdin)
         printf("Starting IC shell\n");
 
@@ -52,20 +29,16 @@ int main(int argc, char *argv[]) {
         if (input == stdin)
             printf("icsh $ ");
 
-        // read command from file
         if (!fgets(buffer, MAX_CMD_BUFFER, input)) {
             if (input != stdin) fclose(input);
             if (input == stdin) printf("\n");
             break;
         }
-
-        // rm trailing newline
         buffer[strcspn(buffer, "\n")] = 0;
         trim(buffer);
 
         if (strlen(buffer) == 0) continue;
 
-        // handle !!
         if (strcmp(buffer, "!!") == 0) {
             if (strlen(last_cmd) == 0) continue;
             printf("%s\n", last_cmd);
@@ -74,44 +47,11 @@ int main(int argc, char *argv[]) {
             strcpy(last_cmd, buffer);
         }
 
-        // parse command
-        char *cmd = strtok(buffer, " ");
-        if (!cmd) continue;
+        // try builtin
+        if (handle_builtin(buffer, &last_status)) continue;
 
-        if (strcmp(cmd, "echo") == 0) {
-            char *arg = strtok(NULL, "");
-            if (arg) printf("%s\n", arg);
-            else printf("\n");
-        } else if (strcmp(cmd, "exit") == 0) {
-            char *arg = strtok(NULL, " ");
-            int code = 0;
-            if (arg) code = parse_exit_code(arg);
-            printf("bye\n");
-            exit(code);
-        } else {
-            // try to run as external command
-            char *argv_exec[MAX_CMD_BUFFER/2 + 2];
-            int i = 0;
-            argv_exec[i++] = cmd;
-            char *arg = NULL;
-            while ((arg = strtok(NULL, " ")) != NULL) {
-                argv_exec[i++] = arg;
-            }
-            argv_exec[i] = NULL;
-
-            pid_t pid = fork();
-            if (pid < 0) {
-                perror("fork");
-            } else if (pid == 0) {
-                // error handling
-                execvp(cmd, argv_exec);
-                fprintf(stderr, "icsh: command not found: %s\n", cmd);
-                exit(127);
-            } else {
-                int status;
-                waitpid(pid, &status, 0);
-            }
-        }
+        // try external
+        run_external(buffer, &last_status, &child_pid);
     }
     return 0;
 }
