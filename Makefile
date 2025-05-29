@@ -4,7 +4,7 @@ BINARY=icsh
 
 all: icsh
 
-icsh: icsh.c builtins.c external.c signals.c
+icsh: icsh.c builtins.c external.c signals.c utils.c
 	$(CC) -o $(BINARY) $(CFLAGS) $^
 
 .PHONY: clean

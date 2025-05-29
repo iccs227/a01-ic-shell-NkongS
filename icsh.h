@@ -1,6 +1,9 @@
 #ifndef ICSH_H
 #define ICSH_H
 
+#include <sys/types.h>
+#include <signal.h>
+
 #define MAX_CMD_BUFFER 255
 
 void trim(char *str);

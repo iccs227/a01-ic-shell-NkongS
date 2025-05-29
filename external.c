@@ -4,14 +4,21 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 volatile sig_atomic_t fg_child_pid = 0;
 
 int run_external(char *cmd, int *last_status, pid_t *child_pid) {
     char *argv_exec[MAX_CMD_BUFFER/2 + 2];
     int i = 0;
-    char *saveptr;
-    char *token = strtok_r(cmd, " ", &saveptr);
+
+    // make a copy of cmd to avoid modifying the original buffer
+    char cmd_copy[MAX_CMD_BUFFER];
+    strncpy(cmd_copy, cmd, MAX_CMD_BUFFER);
+    cmd_copy[MAX_CMD_BUFFER-1] = '\0';
+
+    char *saveptr = NULL;
+    char *token = strtok_r(cmd_copy, " ", &saveptr);
     while (token && i < MAX_CMD_BUFFER/2 + 1) {
         argv_exec[i++] = token;
         token = strtok_r(NULL, " ", &saveptr);
@@ -38,4 +45,3 @@ int run_external(char *cmd, int *last_status, pid_t *child_pid) {
         return 1;
     }
 }
-void reset_child_pid() { fg_child_pid = 0; }
