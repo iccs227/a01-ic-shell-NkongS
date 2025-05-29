@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <signal.h>
 
 int main(int argc, char *argv[]) {
     char buffer[MAX_CMD_BUFFER];
@@ -30,9 +31,13 @@ int main(int argc, char *argv[]) {
             printf("icsh $ ");
 
         if (!fgets(buffer, MAX_CMD_BUFFER, input)) {
-            if (input != stdin) fclose(input);
-            if (input == stdin) printf("\n");
-            break;
+            if (feof(input)) { 
+                if (input != stdin) fclose(input);
+                if (input == stdin) printf("\n");
+                break;
+            }
+            clearerr(input); 
+            continue;
         }
         buffer[strcspn(buffer, "\n")] = 0;
         trim(buffer);
@@ -46,11 +51,13 @@ int main(int argc, char *argv[]) {
         } else {
             strcpy(last_cmd, buffer);
         }
+        // make a copy of the buffer so it doesn't get modified 
+        char buffer_copy[MAX_CMD_BUFFER];
+        strncpy(buffer_copy, buffer, MAX_CMD_BUFFER);
+        buffer_copy[MAX_CMD_BUFFER-1] = '\0';
 
-        // try builtin
-        if (handle_builtin(buffer, &last_status)) continue;
+        if (handle_builtin(buffer_copy, &last_status)) continue;
 
-        // try external
         run_external(buffer, &last_status, &child_pid);
     }
     return 0;

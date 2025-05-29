@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-volatile sig_atomic_t fg_child_pid = 0;
-
 void sigint_handler(int sig) {
     if (fg_child_pid > 0) {
         kill(fg_child_pid, SIGINT);
