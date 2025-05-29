@@ -1,3 +1,4 @@
 *.dSYM/
+.vscode/
 icsh
 test.sh
