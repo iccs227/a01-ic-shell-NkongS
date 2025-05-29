@@ -57,3 +57,14 @@
 - Signal handling does not terminate the shell.
 
 ---
+
+## Milestone 5: I/O Redirection
+
+**Features:**
+- Supports input (`<`) and output (`>`) redirection for external programs.
+
+**Assumptions/Implementation Notes:**
+- Output files are created if it doesn't exist.
+- Input files doesn't exist an error is shown.
+
+---
