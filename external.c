@@ -1,4 +1,5 @@
 #include "icsh.h"
+#include "jobs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +9,7 @@
 
 volatile sig_atomic_t fg_child_pid = 0;
 
-int run_external(char *cmd, int *last_status, pid_t *child_pid) {
+int run_external(char *cmd, int *last_status, pid_t *child_pid, int is_background) {
     char *argv_exec[MAX_CMD_BUFFER/2 + 2];
     int i = 0;
     char *infile = NULL, *outfile = NULL;
@@ -41,6 +42,8 @@ int run_external(char *cmd, int *last_status, pid_t *child_pid) {
         *last_status = 1;
         return 1;
     } else if (pid == 0) {
+        setpgid(0, 0);
+        
         // input redirect
         if (infile) {
             int fd = open(infile, O_RDONLY);
@@ -65,13 +68,26 @@ int run_external(char *cmd, int *last_status, pid_t *child_pid) {
         fprintf(stderr, "icsh: command not found: %s\n", argv_exec[0]);
         exit(127);
     } else {
-        *child_pid = pid;
-        fg_child_pid = pid;
-        int status;
-        waitpid(pid, &status, 0);
-        fg_child_pid = 0;
-        if (WIFEXITED(status)) *last_status = WEXITSTATUS(status);
-        else *last_status = 1;
+        setpgid(pid, pid);
+        if (!is_background) {
+            tcsetpgrp(STDIN_FILENO, pid);
+            int status;
+            waitpid(pid, &status, WUNTRACED);
+            tcsetpgrp(STDIN_FILENO, getpid());
+            fg_child_pid = 0;
+            if (WIFEXITED(status)) {
+                *last_status = WEXITSTATUS(status);
+            } else if (WIFSTOPPED(status)) {
+                add_job(pid, cmd);
+                job_t *job = find_job_by_pid(pid);
+                if (job) strcpy(job->status, "Stopped");
+            } else {
+                *last_status = 1;
+            }
+        } else {
+            printf("[%d] %d\n", next_job_id, pid);
+            add_job(pid, cmd);
+        }
         return 1;
     }
 }

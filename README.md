@@ -68,3 +68,15 @@
 - Input files doesn't exist an error is shown.
 
 ---
+
+## Milestone 6: Background Jobs and Job Control
+
+**Features:**
+- Supports background jobs with `&`.
+- Implements `jobs`, `fg`, and `bg` commands for job control.
+
+**Assumptions/Implementation Notes:**
+- Prints job status when background jobs complete.
+- Only uncompleted jobs are listed with `jobs`.
+
+---

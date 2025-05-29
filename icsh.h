@@ -9,7 +9,7 @@
 void trim(char *str);
 int parse_exit_code(char *arg);
 int handle_builtin(char *cmd, int *last_status);
-int run_external(char *cmd, int *last_status, pid_t *child_pid);
+int run_external(char *cmd, int *last_status, pid_t *child_pid, int is_background);
 void setup_signal_handlers();
 void reset_child_pid();
 

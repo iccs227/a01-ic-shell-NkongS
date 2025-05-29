@@ -1,4 +1,5 @@
 #include "icsh.h"
+#include "jobs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,11 @@ int main(int argc, char *argv[]) {
     int last_status = 0;
     FILE *input = stdin;
     pid_t child_pid = 0;
+
+    setpgid(0, 0);
+    tcsetpgrp(STDIN_FILENO, getpid());
+    signal(SIGTTOU, SIG_IGN);
+    signal(SIGTTIN, SIG_IGN);
 
     if (argc == 2) {
         input = fopen(argv[1], "r");
@@ -56,9 +62,18 @@ int main(int argc, char *argv[]) {
         strncpy(buffer_copy, buffer, MAX_CMD_BUFFER);
         buffer_copy[MAX_CMD_BUFFER-1] = '\0';
 
+        // background check
+        int is_background = 0;
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len-1] == '&') {
+            is_background = 1;
+            buffer[len-1] = '\0'; 
+            trim(buffer);         
+        }
+
         if (handle_builtin(buffer_copy, &last_status)) continue;
 
-        run_external(buffer, &last_status, &child_pid);
+        run_external(buffer, &last_status, &child_pid, is_background);
     }
     return 0;
 }
