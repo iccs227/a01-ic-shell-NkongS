@@ -1,5 +1,6 @@
 #include "icsh.h"
 #include "jobs.h"
+#include "snake.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,6 +113,24 @@ int handle_builtin(char *cmd, int *last_status) {
         print_jobs();
         *last_status = 0;
         return 1;
+    }
+
+    if (argc > 0 && strcmp(argv[0], "game") == 0) {
+        if (argc == 2 && strcmp(argv[1], "ls") == 0) {
+            printf("Available games:\n- snake\n");
+            fflush(stdout);
+            *last_status = 0;
+            return 1;
+        } else if (argc == 2 && strcmp(argv[1], "snake") == 0) {
+            play_snake();
+            *last_status = 0;
+            return 1;
+        } else {
+            printf("Usage: game ls | game [game_name]\n");
+            fflush(stdout);
+            *last_status = 1;
+            return 1;
+        }
     }
     return 0;
 }

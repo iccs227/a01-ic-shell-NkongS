@@ -80,3 +80,11 @@
 - Only uncompleted jobs are listed with `jobs`.
 
 ---
+
+## Milestone 7: Extra Features
+
+**Features:**
+- Adds a new built-in command: `game ls`
+  - Lists available built-in games (e.g., `snake`).
+- Adds a new built-in command: `game snake`
+  - Launches a simple CLI version of the classic Snake game inside the shell.
